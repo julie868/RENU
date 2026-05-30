@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RENU Collective — Studio Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gold: #a07840;
+  --ink: #1a1714;
+  --warm: #f5f0e8;
+  --stone: #6b6560;
+  --bg: #faf8f5;
+  --surface: #f0ece4;
+  --border: rgba(100,90,80,0.18);
+  --text: #1a1714;
+  --text-muted: #6b6560;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+header { background: var(--ink); padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 500; color: var(--warm); letter-spacing: 0.15em; text-transform: uppercase; }
+.logo span { color: var(--gold); }
+.header-tag { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,240,232,0.4); }
+.api-banner { background: #2a2420; border-bottom: 1px solid rgba(160,120,64,0.3); padding: 0.75rem 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.api-banner label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+.api-banner input { flex: 1; min-width: 280px; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(160,120,64,0.4); border-radius: var(--radius); padding: 0.5rem 0.75rem; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--warm); }
+.api-banner input:focus { outline: none; border-color: var(--gold); }
+.api-banner input::placeholder { color: rgba(245,240,232,0.3); }
+.api-status { font-size: 10px; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; background: rgba(160,120,64,0.15); color: var(--gold); border: 0.5px solid rgba(160,120,64,0.3); white-space: nowrap; }
+.api-status.ok { background: rgba(59,109,17,0.15); color: #3B6D11; border-color: rgba(59,109,17,0.3); }
+.api-status.err { background: rgba(163,45,45,0.15); color: #A32D2D; border-color: rgba(163,45,45,0.3); }
+
+/* CORS WARNING BOX */
+.cors-warn { background: #fff8e6; border: 1px solid #e6c84a; border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 12px; line-height: 1.7; color: #5a4500; display: none; }
+.cors-warn strong { color: #8B6000; display: block; margin-bottom: 0.5rem; }
+.cors-warn code { background: #f0e8c8; padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 11px; }
+
+.tabs-bar { background: white; border-bottom: 0.5px solid var(--border); display: flex; padding: 0 2rem; overflow-x: auto; }
+.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 1rem 1.25rem; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } main { padding: 1rem; } header { padding: 1rem; } .api-banner { padding: 0.75rem 1rem; } .tabs-bar { padding: 0 1rem; } }
+.input-group { margin-bottom: 1rem; }
+.section-label { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; display: block; }
+textarea, input[type="text"], input[type="date"], select { width: 100%; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); background: white; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 0.625rem 0.75rem; resize: vertical; transition: border-color 0.15s; }
+textarea:focus, input:focus, select:focus { outline: none; border-color: var(--gold); }
+.sculpture-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 1rem; }
+.chip { padding: 0.5rem 0.75rem; border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 11px; font-family: 'DM Mono', monospace; cursor: pointer; text-align: left; background: white; color: var(--text); transition: all 0.15s; line-height: 1.4; }
+.chip:hover, .chip.selected { border-color: var(--gold); color: var(--gold); background: rgba(160,120,64,0.04); }
+.chip small { display: block; font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+.btn-primary { width: 100%; padding: 0.8rem; background: var(--ink); color: var(--warm); border: none; border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; margin-top: 0.5rem; }
+.btn-primary:hover { opacity: 0.82; }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-sm { padding: 0.35rem 0.875rem; background: none; color: var(--text-muted); border: 0.5px solid var(--border); border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+.btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+.drop-zone { border: 1px dashed var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; cursor: pointer; background: white; transition: border-color 0.2s; margin-bottom: 1rem; }
+.drop-zone:hover { border-color: var(--gold); }
+.drop-zone.has-image { padding: 0.5rem; border-style: solid; }
+.drop-zone img { max-height: 200px; max-width: 100%; border-radius: 4px; display: block; margin: 0 auto; }
+.drop-label-main { font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px; }
+.drop-label-sub { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; }
+.output-card { background: white; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.output-card.gold-border { border-color: rgba(160,120,64,0.5); }
+.output-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.625rem; border-bottom: 0.5px solid var(--border); }
+.output-card-title { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+.output-text { font-family: 'Cormorant Garamond', serif; font-size: 15px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+.output-text.mono { font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.75; }
+.char-count { font-size: 9px; color: var(--text-muted); text-align: right; margin-top: 6px; }
+.hashtag-pill { display: inline-block; font-size: 10px; padding: 2px 8px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; color: var(--text-muted); margin: 2px; font-family: 'DM Mono', monospace; }
+.loading-bar { height: 2px; background: var(--surface); border-radius: 2px; overflow: hidden; margin-bottom: 1rem; }
+.loading-bar-fill { height: 100%; background: var(--gold); animation: loading 1.5s infinite; }
+@keyframes loading { 0% { width:0%;margin-left:0; } 50% { width:60%;margin-left:20%; } 100% { width:0%;margin-left:100%; } }
+.placeholder-msg { padding: 3rem 0; text-align: center; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); }
+.hidden { display: none !important; }
+.deadline-list-wrap { background: white; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; }
+.deadline-row { display: flex; align-items: center; justify-content: space-between; padding: 0.875rem 1.25rem; border-bottom: 0.5px solid var(--border); gap: 1rem; }
+.deadline-row:last-child { border-bottom: none; }
+.deadline-name { font-size: 12px; color: var(--text); font-weight: 500; }
+.deadline-meta { font-size: 9px; color: var(--text-muted); letter-spacing: 0.06em; margin-top: 2px; }
+.badge { font-size: 9px; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.badge-urgent { background: #FCEBEB; color: #A32D2D; }
+.badge-soon { background: #FAEEDA; color: #854F0B; }
+.badge-ok { background: #EAF3DE; color: #3B6D11; }
+.badge-past { background: var(--surface); color: var(--text-muted); }
+.add-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end; padding: 1rem; background: var(--surface); border-radius: var(--radius-lg); }
+.add-row input, .add-row select { margin: 0; background: white; }
+.gemini-card { background: white; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.gemini-card h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; padding-bottom: 0.625rem; border-bottom: 0.5px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.gemini-prompt-text { font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.75; color: var(--text); background: var(--surface); padding: 1rem; border-radius: var(--radius); white-space: pre-wrap; user-select: all; }
+.tip-box { background: rgba(160,120,64,0.06); border: 0.5px solid rgba(160,120,64,0.25); border-radius: var(--radius); padding: 0.875rem 1rem; font-size: 11px; line-height: 1.7; color: var(--text); margin-bottom: 1.5rem; }
+.tip-box strong { color: var(--gold); }
+.error-box { background: #fff0f0; border: 1px solid #ffb3b3; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; font-size: 11px; line-height: 1.7; color: #8B0000; }
+.error-box strong { display: block; margin-bottom: 4px; }
+footer { text-align: center; padding: 2rem; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); border-top: 0.5px solid var(--border); margin-top: 3rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RE<span>NU</span> Collective</div>
+  <div class="header-tag">Studio Console</div>
+</header>
+
+<div class="api-banner">
+  <label for="apiKeyInput">Claude API Key</label>
+  <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." oninput="checkKey()" />
+  <span class="api-status" id="apiStatus">Not set</span>
+  <button class="btn-sm" onclick="testKey()" style="border-color:rgba(160,120,64,0.4);color:#C8A870">Test Key</button>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('content')">Content Studio</button>
+  <button class="tab-btn" onclick="switchTab('assembly')">Assembly Guide</button>
+  <button class="tab-btn" onclick="switchTab('image')">Image Brief</button>
+  <button class="tab-btn" onclick="switchTab('calendar')">Deadlines</button>
+  <button class="tab-btn" onclick="switchTab('gemini')">Gemini Prompts</button>
+</div>
+
+<main>
+
+  <!-- CONTENT STUDIO -->
+  <div class="tab-panel active" id="tab-content">
+    <div id="corsWarnContent" class="cors-warn">
+      <strong>Connection issue detected</strong>
+      Your browser is blocking the API call. Try one of these fixes:<br>
+      1. Open this file in <strong>Microsoft Edge</strong> instead of Chrome<br>
+      2. Or host the file: drag it into <code>VS Code</code> → right-click → Open with Live Server<br>
+      3. Or paste your key and use the <strong>Gemini Prompts</strong> tab instead — that needs no API
+    </div>
+    <div class="two-col">
+      <div>
+        <div class="input-group">
+          <label class="section-label">Work name</label>
+          <input type="text" id="workName" placeholder="e.g. Vestige Gold" />
+        </div>
+        <div class="input-group">
+          <label class="section-label">Quick select</label>
+          <div class="sculpture-grid">
+            <button class="chip" onclick="prefillWork(this,'Vestige Gold','Anthracite coal, gold mosaic sphere, marble plinth, 45×28cm','Coal sourced from Sydney basin. Held pressure for millions of years. The gold sphere above it is fractured — deliberate.')">Vestige Gold<small>Coal · Gold · Marble</small></button>
+            <button class="chip" onclick="prefillWork(this,'Dark Halo','Reclaimed charred timber, 40×30cm','Timber that survived what most does not. Found after a burn. The halo is not bestowed — it is earned.')">Dark Halo<small>Charred timber · 40×30cm</small></button>
+            <button class="chip" onclick="prefillWork(this,'Bloodwood Sand','Bloodwood, sand, reclaimed elements, 70×26cm','Bloodwood cut from a fallen tree. The red grain is not added — it is the tree\'s history, revealed.')">Bloodwood Sand<small>Bloodwood · Sand</small></button>
+            <button class="chip" onclick="prefillWork(this,'Iron & Char','Iron, charred timber, industrial salvage','Iron forged. Timber consumed by fire. Both shaped by heat. Neither is decorative.')">Iron & Char<small>Iron · Charred timber</small></button>
+            <button class="chip" onclick="prefillWork(this,'Stillpoint','Harbour driftwood, stone, 55×43cm','Harbour-sourced driftwood shaped by tide. The stone beneath has not moved. The wood has moved constantly.')">Stillpoint<small>Driftwood · Stone</small></button>
+            <button class="chip" onclick="prefillWork(this,'Shoreline Column','Driftwood, reclaimed timber, 73×24cm','Vertical. Certain. The driftwood has been horizontal for years — dragged, turned, softened. Now it stands.')">Shoreline Column<small>Driftwood · 73×24cm</small></button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Materials & dimensions</label>
+          <textarea id="materials" rows="2" placeholder="e.g. Anthracite coal, marble plinth, gold sphere, 45×28cm"></textarea>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Sourcing story</label>
+          <textarea id="sourcingStory" rows="3" placeholder="e.g. Coal from Chinaman's Beach, driftwood from Neutral Bay after the July storm..."></textarea>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Post type</label>
+          <select id="postType">
+            <option value="instagram">Instagram caption</option>
+            <option value="linkedin">LinkedIn post</option>
+            <option value="both">Both Instagram + LinkedIn</option>
+            <option value="artist_statement">Artist statement (100–150 words)</option>
+            <option value="lookbook">Lookbook description (2–3 sentences)</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="generateBtn" onclick="generateContent()">Generate RENU Content</button>
+      </div>
+      <div>
+        <div id="loadingContent" class="hidden">
+          <div class="section-label" style="margin-bottom:0.75rem">Generating in RENU voice...</div>
+          <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+        </div>
+        <div id="errorContent" class="error-box hidden"></div>
+        <div class="placeholder-msg" id="contentPlaceholder">Output appears here</div>
+        <div id="contentOutput" class="hidden">
+          <div id="instagramOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Instagram</div><button class="btn-sm" onclick="copyText('ig-text')">Copy</button></div>
+            <div class="output-text" id="ig-text"></div>
+            <div style="margin-top:0.75rem" id="ig-hashtags"></div>
+          </div>
+          <div id="linkedinOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">LinkedIn</div><button class="btn-sm" onclick="copyText('li-text')">Copy</button></div>
+            <div class="output-text" id="li-text"></div>
+          </div>
+          <div id="statementOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Artist Statement</div><button class="btn-sm" onclick="copyText('stmt-text')">Copy</button></div>
+            <div class="output-text" id="stmt-text"></div>
+            <div class="char-count" id="stmt-count"></div>
+          </div>
+          <div id="lookbookOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Lookbook</div><button class="btn-sm" onclick="copyText('lb-text')">Copy</button></div>
+            <div class="output-text" id="lb-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSEMBLY GUIDE -->
+  <div class="tab-panel" id="tab-assembly">
+    <div class="two-col">
+      <div>
+        <label class="section-label" style="margin-bottom:0.5rem;display:block">Photo of work in progress (optional)</label>
+        <div class="drop-zone" id="asmDrop" onclick="document.getElementById('asmFile').click()">
+          <input type="file" id="asmFile" accept="image/*" class="hidden" onchange="handleFile(event,'asm')">
+          <div id="asmDropLabel"><span class="drop-label-main">Select photo</span><span class="drop-label-sub">Tap to upload</span></div>
+          <img id="asmPreview" class="hidden" alt="Work in progress" />
+        </div>
+        <div class="input-group">
+          <label class="section-label">Materials you're working with</label>
+          <textarea id="asmMaterials" rows="2" placeholder="e.g. Large driftwood log, anthracite coal block, copper ring, sandstone base..."></textarea>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Where are you up to?</label>
+          <select id="asmStage">
+            <option value="early">Early — base and main element only</option>
+            <option value="mid">Mid — main structure built, need next element</option>
+            <option value="near_complete">Near complete — need finishing and sealing</option>
+            <option value="stuck">Stuck — not sure what to do next</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Specific challenge</label>
+          <textarea id="asmChallenge" rows="2" placeholder="e.g. Coal crumbling at the join, not sure how to attach the copper ring..."></textarea>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Purpose</label>
+          <select id="asmPurpose">
+            <option value="">General studio work</option>
+            <option value="prize">Art prize submission</option>
+            <option value="tender">Public art tender</option>
+            <option value="commission">Private commission</option>
+            <option value="gallery">Gallery sale</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="asmBtn" onclick="generateAssembly()">Get Assembly Guide</button>
+      </div>
+      <div>
+        <div id="loadingAsm" class="hidden">
+          <div class="section-label" style="margin-bottom:0.75rem">Analysing your work...</div>
+          <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+        </div>
+        <div id="errorAsm" class="error-box hidden"></div>
+        <div class="placeholder-msg" id="asmPlaceholder">Guide appears here</div>
+        <div id="asmOutput" class="hidden">
+          <div id="nextCard" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Next Element — In Your Style</div><button class="btn-sm" onclick="copyText('next-text')">Copy</button></div>
+            <div class="output-text mono" id="next-text"></div>
+          </div>
+          <div id="attachCard" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">How to Attach It</div><button class="btn-sm" onclick="copyText('attach-text')">Copy</button></div>
+            <div class="output-text mono" id="attach-text"></div>
+          </div>
+          <div id="finishCard" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Finishing & Sealing</div><button class="btn-sm" onclick="copyText('finish-text')">Copy</button></div>
+            <div class="output-text mono" id="finish-text"></div>
+          </div>
+          <div id="geminiAsmCard" class="output-card gold-border hidden">
+            <div class="output-card-header"><div class="output-card-title">Gemini Prompt — Visual Completion</div><button class="btn-sm" onclick="copyText('gemini-asm-text')">Copy for Gemini</button></div>
+            <div class="output-text mono" id="gemini-asm-text"></div>
+            <div style="margin-top:0.75rem;font-size:9px;color:var(--text-muted)">Paste into Gemini AI Studio with your style reference photos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE BRIEF -->
+  <div class="tab-panel" id="tab-image">
+    <div class="two-col">
+      <div>
+        <label class="section-label" style="margin-bottom:0.5rem;display:block">Upload photo</label>
+        <div class="drop-zone" id="imgDrop" onclick="document.getElementById('imgFile').click()">
+          <input type="file" id="imgFile" accept="image/*" class="hidden" onchange="handleFile(event,'img')">
+          <div id="imgDropLabel"><span class="drop-label-main">Select photo</span><span class="drop-label-sub">Tap to upload</span></div>
+          <img id="imgPreview" class="hidden" alt="Work photo" />
+        </div>
+        <div class="input-group">
+          <label class="section-label">Work name & context</label>
+          <input type="text" id="imgWorkName" placeholder="e.g. Material Witness — Casey tender" />
+        </div>
+        <div class="input-group">
+          <label class="section-label">What do you need?</label>
+          <select id="imgTask">
+            <option value="canva_brief">Canva editing brief for Felicia</option>
+            <option value="caption">Instagram caption for this image</option>
+            <option value="composition">Composition feedback</option>
+            <option value="all">Full brief — editing + caption + composition</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="section-label">Notes</label>
+          <textarea id="imgNotes" rows="2" placeholder="e.g. Prize submission, need clean background..."></textarea>
+        </div>
+        <button class="btn-primary" id="imgBtn" onclick="generateImageBrief()" disabled>Analyse & Generate Brief</button>
+      </div>
+      <div>
+        <div id="loadingImage" class="hidden">
+          <div class="section-label" style="margin-bottom:0.75rem">Analysing...</div>
+          <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+        </div>
+        <div id="errorImage" class="error-box hidden"></div>
+        <div class="placeholder-msg" id="imagePlaceholder">Upload a photo to begin</div>
+        <div id="imageOutput" class="hidden">
+          <div id="canvaOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Canva Editing Brief</div><button class="btn-sm" onclick="copyText('canva-text')">Copy for Felicia</button></div>
+            <div class="output-text mono" id="canva-text"></div>
+          </div>
+          <div id="imgCapOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Caption</div><button class="btn-sm" onclick="copyText('imgcap-text')">Copy</button></div>
+            <div class="output-text" id="imgcap-text"></div>
+          </div>
+          <div id="compOut" class="output-card hidden">
+            <div class="output-card-header"><div class="output-card-title">Composition Notes</div></div>
+            <div class="output-text mono" id="comp-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEADLINES -->
+  <div class="tab-panel" id="tab-calendar">
+    <div class="deadline-list-wrap"><div id="deadlineList"></div></div>
+    <div class="add-row">
+      <div><label class="section-label">Name</label><input type="text" id="newName" placeholder="e.g. Fisher's Ghost Art Award" /></div>
+      <div><label class="section-label">Deadline</label><input type="date" id="newDate" /></div>
+      <div><label class="section-label">Type</label><select id="newType"><option value="prize">Art Prize</option><option value="tender">Tender</option><option value="grant">Grant</option><option value="registry">Registry</option><option value="event">Event</option></select></div>
+      <button class="btn-sm" onclick="addDeadline()" style="height:36px;margin-top:auto">+ Add</button>
+    </div>
+  </div>
+
+  <!-- GEMINI PROMPTS -->
+  <div class="tab-panel" id="tab-gemini">
+    <div class="tip-box">
+      <strong>How to use:</strong> Go to <a href="https://gemini.google.com" target="_blank" style="color:var(--gold)">gemini.google.com</a> → open your RENU Gem → upload your in-progress photo + 3–4 style reference photos → paste one of the prompts below.
+    </div>
+    <div class="gemini-card">
+      <h3>Complete the sculpture visually <button class="btn-sm" onclick="copyText('p1')">Copy</button></h3>
+      <div class="gemini-prompt-text" id="p1">You are a fine art assistant for Julie Furlong, RENU Collective, Neutral Bay Sydney.
+
+Julie's style: vertical totemic forms OR carefully balanced horizontal compositions. Materials: anthracite coal, harbour driftwood, bleached sandstone, charred timber, salvaged iron, copper or gold leaf accent at eye level. Always dark against light. Nothing decorative — every element earns its place. Base always resolved: stone plinth, sandstone block, or charred timber base.
+
+Reference works: Vestige Gold (coal + gold sphere + marble plinth), Stillpoint (harbour driftwood + stone), Shoreline Column (driftwood vertical 73cm), Dark Halo (charred timber), Iron & Char (iron + charred timber), Bloodwood Sand (bloodwood + sand).
+
+Look at this in-progress sculpture and the style reference photos. Suggest a visual completion — add the logical next element in her aesthetic. Show it placed on the sculpture. Describe exactly what you added and why.
+
+Also: brighten 20–30%, lift shadows, warm the tones slightly. Output gallery-quality, post-ready.</div>
+    </div>
+    <div class="gemini-card">
+      <h3>Introduce a new element <button class="btn-sm" onclick="copyText('p2')">Copy</button></h3>
+      <div class="gemini-prompt-text" id="p2">You are a fine art assistant for Julie Furlong, RENU Collective, Neutral Bay Sydney.
+
+Julie's style: vertical totemic forms or balanced compositions. Materials palette: anthracite coal, harbour driftwood, sandstone, charred timber, salvaged iron, copper accent, gold leaf. Dark against light. Raw and honest — nothing hidden, nothing decorative.
+
+Look at this in-progress sculpture. Introduce ONE new material element that does not currently exist in the piece. Choose from her palette. Show it placed in a position that serves the composition.
+
+Describe clearly what you added and why it belongs. Brighten 20–30%, lift shadows, warm the tones. Output gallery-quality.</div>
+    </div>
+    <div class="gemini-card">
+      <h3>Clean up for prize submission <button class="btn-sm" onclick="copyText('p3')">Copy</button></h3>
+      <div class="gemini-prompt-text" id="p3">You are a professional photography editor for a fine art sculpture studio.
+
+Enhance this image for prize submission and gallery use. Do NOT alter the sculpture itself.
+
+— Remove background clutter
+— Neutralise background to warm off-white or soft concrete grey
+— Brighten overall exposure 25%
+— Increase clarity to reveal material texture
+— Lift shadows so dark materials show detail
+— Warm the white balance slightly
+— Do not over-saturate
+
+Output: print-quality, gallery-ready, suitable for prize submission PDF.</div>
+    </div>
+    <div class="gemini-card">
+      <h3>Brighten for Instagram <button class="btn-sm" onclick="copyText('p4')">Copy</button></h3>
+      <div class="gemini-prompt-text" id="p4">You are a social media photography editor for a fine art sculpture studio. Aesthetic: refined, gallery-quality.
+
+Enhance this sculpture photo for Instagram:
+— Brighten exposure 20–30%
+— Lift shadows so dark materials (coal, charred timber) show texture
+— Increase clarity slightly
+— Warm the white balance
+— Clean background — remove distracting elements
+— Do not over-saturate or make it look filtered
+— Should feel like an art gallery feed, not a lifestyle brand
+
+Output: square or portrait crop (1:1 or 4:5), post-ready.</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>RENU Collective Studio Console · Julie Furlong · Neutral Bay Sydney · designmarketing.com.au</footer>
+
+<script>
+const SYSTEM_PROMPT = `You are the content writer and technical advisor for RENU Collective, Julie Furlong's conscious design sculpture practice in Neutral Bay, Sydney. Julie has 27 years of property marketing experience through D+M agency.
+
+RENU PHILOSOPHY: Expiry is not an ending — it is a threshold. Materials arrive having already lived a life. That history is not a flaw. It is the entire point. Nothing is disguised. The char remains. The bend marks remain. Conscious design honours what materials have been through.
+
+JULIE'S SCULPTURE STYLE:
+- Vertical totemic forms OR carefully balanced horizontal compositions
+- Contrast: dark (anthracite coal, charred timber) against light (sandstone, bleached driftwood)
+- Gold or copper accent introduced at eye level — selective, never excessive
+- Raw industrial materials paired with organic (driftwood, stone)
+- Base always resolved — stone plinth, sandstone block, or charred timber base
+- Nothing decorative. Every element earns its place.
+
+KNOWN WORKS: Vestige Gold (coal + gold sphere + marble), Dark Halo (charred timber 40x30cm), Bloodwood Sand (bloodwood + sand 70x26cm), Iron & Char (iron + charred timber), Stillpoint (driftwood + stone 55x43cm), Shoreline Column (driftwood vertical 73x24cm), Copper Sail, Knot and Stone, After the Feast, Residue, Luna Duo.
+
+TECHNICAL KNOWLEDGE:
+- Coal/anthracite: seal with thinned PVC glue into gaps only. Matte finish only.
+- Driftwood/timber: wood hardener first, then penetrating oils or diluted varnish. Never surface coat.
+- Estapol (Wattyl Water Based, clear satin) suitable for driftwood.
+- Adhesives: Selleys All Clear, Araldite 5 Minute Epoxy, Selleys Kwik Grip Clear, Liquid Nails Fuze It.
+- Heavy elements: always use hidden mechanical fixings — wire or threaded rod — as backup.
+- Metallic effects: Rub n Buff (Antique Gold, European Gold) applied selectively.
+
+CONTENT VOICE RULES:
+- Short declarative sentences. Never soften.
+- Lead with material's previous life.
+- British English (colour, honour, realise).
+- NEVER use: recycled, upcycled, repurposed, transformed, handcrafted, handmade, beautiful, amazing, stunning, treasure.
+- PREFERRED: sourced and reimagined, materials with memory, expiry as threshold, the history is the point, challenging throwaway culture.
+- I for creative voice. We for RENU Collective brand.
+- Instagram: max 5 hashtags, always include #Sculpture and #InteriorDesign.`;
+
+let apiKey = '';
+let uploadedB64 = { asm: null, img: null };
+let uploadedMime = { asm: null, img: null };
+
+let deadlines = [
+  { name: "Cranbourne Hub EOI", date: "2026-06-05", type: "tender" },
+  { name: "Deakin Small Sculpture Award", date: "2026-06-05", type: "prize" },
+  { name: "Lane Cove Artist Register", date: "2026-06-30", type: "registry" },
+  { name: "Camden Artist Register", date: "2026-06-30", type: "registry" },
+  { name: "Waverley Council Register", date: "2026-06-30", type: "registry" },
+  { name: "Creative Ballarat Database", date: "2026-06-30", type: "registry" },
+  { name: "Woollahra Small Sculpture Prize", date: "2026-07-12", type: "prize" },
+  { name: "Meroogal Women's Art Prize", date: "2026-07-15", type: "prize" },
+  { name: "Paddington Sculpture Prize", date: "2026-08-02", type: "prize" },
+  { name: "Urunga Small Sculpture", date: "2026-08-09", type: "prize" },
+  { name: "Hornsby Art Prize", date: "2026-08-20", type: "prize" },
+  { name: "RENU August Open Day", date: "2026-08-29", type: "event" }
+];
+
+function checkKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  const status = document.getElementById('apiStatus');
+  if (apiKey.startsWith('sk-ant-') && apiKey.length > 20) {
+    status.textContent = 'Ready'; status.className = 'api-status ok';
+  } else if (apiKey.length > 0) {
+    status.textContent = 'Check key format'; status.className = 'api-status err';
+  } else {
+    status.textContent = 'Not set'; status.className = 'api-status';
+  }
+}
+
+async function testKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) { alert('Paste your API key first.'); return; }
+  const status = document.getElementById('apiStatus');
+  status.textContent = 'Testing...'; status.className = 'api-status';
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-calls": "true"
+      },
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 20, messages: [{ role: "user", content: "Say OK" }] })
+    });
+    if (resp.ok) {
+      status.textContent = 'Connected'; status.className = 'api-status ok';
+      alert('Key works! You\'re connected to Claude.');
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      status.textContent = 'Error ' + resp.status; status.className = 'api-status err';
+      alert('API error: ' + (err.error?.message || 'Status ' + resp.status) + '\n\nIf this is a CORS error, try opening this file in Microsoft Edge instead of Chrome.');
+    }
+  } catch(e) {
+    status.textContent = 'CORS blocked'; status.className = 'api-status err';
+    alert('Browser is blocking the API call (CORS error).\n\nFix: Open this HTML file in Microsoft Edge instead of Chrome.\n\nOr use the Gemini Prompts tab — that works without an API key.');
+  }
+}
+
+function showError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '<strong>Error</strong>' + msg;
+  el.classList.remove('hidden');
+}
+
+function hideError(elId) { document.getElementById(elId).classList.add('hidden'); }
+
+function switchTab(name) {
+  const names = ['content','assembly','image','calendar','gemini'];
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', names[i] === name));
+  document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', names[i] === name));
+  if (name === 'calendar') renderDeadlines();
+}
+
+function prefillWork(el, name, mats, story) {
+  document.getElementById('workName').value = name;
+  document.getElementById('materials').value = mats;
+  document.getElementById('sourcingStory').value = story;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function callClaude(userMsg, imgKey) {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) { alert('Please paste your Claude API key in the banner at the top.'); return null; }
+  const messages = [];
+  const b64 = uploadedB64[imgKey];
+  const mime = uploadedMime[imgKey];
+  if (b64 && imgKey) {
+    messages.push({ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mime, data: b64 } }, { type: "text", text: userMsg }] });
+  } else {
+    messages.push({ role: "user", content: userMsg });
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-calls": "true"
+      },
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYSTEM_PROMPT, messages })
+    });
+    clearTimeout(timeout);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Status ' + resp.status);
+    }
+    const data = await resp.json();
+    return data.content[0].text;
+  } catch(e) {
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') throw new Error('Request timed out after 30 seconds. Try clicking Test Key to check your connection.');
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) throw new Error('Browser blocked the request (CORS). Open this file in Microsoft Edge instead of Chrome.');
+    throw e;
+  }
+}
+
+async function generateContent() {
+  const name = document.getElementById('workName').value.trim();
+  if (!name) { alert('Please enter a work name.'); return; }
+  const mats = document.getElementById('materials').value.trim();
+  const story = document.getElementById('sourcingStory').value.trim();
+  const type = document.getElementById('postType').value;
+  document.getElementById('generateBtn').disabled = true;
+  document.getElementById('loadingContent').classList.remove('hidden');
+  document.getElementById('contentPlaceholder').classList.add('hidden');
+  document.getElementById('contentOutput').classList.add('hidden');
+  hideError('errorContent');
+  const typeMap = {
+    instagram: "Write an Instagram caption only. Max 5 hashtags on a separate line at the end. Always include #Sculpture and #InteriorDesign.",
+    linkedin: "Write a LinkedIn post only. Professional but not corporate. Connect conscious design to commercial value for developers and designers.",
+    both: "Write both. Label clearly:\nINSTAGRAM:\n[caption]\n\nLINKEDIN:\n[post]",
+    artist_statement: "Write an artist statement of exactly 100-150 words. Two paragraphs. First: materials and previous life. Second: the argument the piece makes.",
+    lookbook: "Write a lookbook description of 2-3 sentences. Gallery tone. Poetic. No prices."
+  };
+  const prompt = `Work: ${name}\nMaterials: ${mats||'not specified'}\nSourcing story: ${story||'not provided'}\n\n${typeMap[type]}`;
+  try {
+    const result = await callClaude(prompt, null);
+    if (result) renderContentOutput(result, type);
+  } catch(e) {
+    showError('errorContent', e.message);
+    document.getElementById('contentPlaceholder').classList.remove('hidden');
+  }
+  document.getElementById('generateBtn').disabled = false;
+  document.getElementById('loadingContent').classList.add('hidden');
+}
+
+function renderContentOutput(text, type) {
+  ['instagramOut','linkedinOut','statementOut','lookbookOut'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  if (type === 'instagram' || type === 'both') {
+    let igText = text;
+    if (type === 'both') {
+      const igM = text.match(/INSTAGRAM:([\s\S]*?)(?=LINKEDIN:|$)/i);
+      const liM = text.match(/LINKEDIN:([\s\S]*)/i);
+      if (igM) igText = igM[1].trim();
+      if (liM) { document.getElementById('li-text').textContent = liM[1].trim(); document.getElementById('linkedinOut').classList.remove('hidden'); }
+    }
+    const lines = igText.split('\n');
+    const hashLines = lines.filter(l => l.trim().startsWith('#'));
+    const bodyLines = lines.filter(l => !l.trim().startsWith('#'));
+    document.getElementById('ig-text').textContent = bodyLines.join('\n').trim();
+    document.getElementById('ig-hashtags').innerHTML = hashLines.join(' ').split(/\s+/).filter(h => h.startsWith('#')).map(h => `<span class="hashtag-pill">${h}</span>`).join('');
+    document.getElementById('instagramOut').classList.remove('hidden');
+  }
+  if (type === 'linkedin') { document.getElementById('li-text').textContent = text; document.getElementById('linkedinOut').classList.remove('hidden'); }
+  if (type === 'artist_statement') { document.getElementById('stmt-text').textContent = text; document.getElementById('stmt-count').textContent = text.split(/\s+/).filter(Boolean).length + ' words'; document.getElementById('statementOut').classList.remove('hidden'); }
+  if (type === 'lookbook') { document.getElementById('lb-text').textContent = text; document.getElementById('lookbookOut').classList.remove('hidden'); }
+  document.getElementById('contentOutput').classList.remove('hidden');
+}
+
+function handleFile(event, key) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    uploadedB64[key] = e.target.result.split(',')[1];
+    uploadedMime[key] = file.type || 'image/jpeg';
+    const preview = document.getElementById(key==='asm'?'asmPreview':'imgPreview');
+    const label = document.getElementById(key==='asm'?'asmDropLabel':'imgDropLabel');
+    const zone = document.getElementById(key==='asm'?'asmDrop':'imgDrop');
+    preview.src = e.target.result; preview.classList.remove('hidden');
+    label.classList.add('hidden'); zone.classList.add('has-image');
+    if (key==='img') document.getElementById('imgBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function generateAssembly() {
+  const mats = document.getElementById('asmMaterials').value.trim();
+  const stage = document.getElementById('asmStage').value;
+  const challenge = document.getElementById('asmChallenge').value.trim();
+  const purpose = document.getElementById('asmPurpose').value;
+  document.getElementById('asmBtn').disabled = true;
+  document.getElementById('loadingAsm').classList.remove('hidden');
+  document.getElementById('asmPlaceholder').classList.add('hidden');
+  document.getElementById('asmOutput').classList.add('hidden');
+  hideError('errorAsm');
+  const stageText = {early:'early stage',mid:'mid stage — main structure built, need next element',near_complete:'near complete — need finishing and sealing',stuck:'stuck and not sure what to do next'}[stage];
+  const prompt = `${uploadedB64.asm?'Look at this photo of my work in progress. ':''}Working on a RENU sculpture.\n\nMaterials: ${mats||'not specified'}\nStage: ${stageText}\n${challenge?'Challenge: '+challenge:''}\n${purpose?'Purpose: '+purpose:''}\n\nGive me four sections, each clearly labelled:\n\nNEXT ELEMENT: What to add next in Julie's style.\n\nHOW TO ATTACH: Specific adhesives and fixings — Selleys All Clear, Araldite Epoxy, Kwik Grip, Liquid Nails Fuze It, threaded rod, wire.\n\nFINISHING AND SEALING: Coal, timber, metal, stone — Estapol, Rub n Buff, thinned PVC glue, beeswax, wood hardener.\n\nGEMINI PROMPT: Ready-to-use prompt for Gemini AI Studio to visually complete this sculpture in Julie's style.`;
+  try {
+    const result = await callClaude(prompt, 'asm');
+    if (result) renderAssemblyOutput(result);
+  } catch(e) {
+    showError('errorAsm', e.message);
+    document.getElementById('asmPlaceholder').classList.remove('hidden');
+  }
+  document.getElementById('asmBtn').disabled = false;
+  document.getElementById('loadingAsm').classList.add('hidden');
+}
+
+function renderAssemblyOutput(text) {
+  const sections = {'NEXT ELEMENT':'next-text','HOW TO ATTACH':'attach-text','FINISHING AND SEALING':'finish-text','GEMINI PROMPT':'gemini-asm-text'};
+  const cards = {'next-text':'nextCard','attach-text':'attachCard','finish-text':'finishCard','gemini-asm-text':'geminiAsmCard'};
+  const keys = Object.keys(sections);
+  keys.forEach((key,i) => {
+    const nextKey = keys[i+1];
+    const regex = nextKey ? new RegExp(key+':([\\s\\S]*?)(?='+nextKey+':|$)','i') : new RegExp(key+':([\\s\\S]*)','i');
+    const match = text.match(regex);
+    const elId = sections[key];
+    if (match) { document.getElementById(elId).textContent = match[1].trim(); document.getElementById(cards[elId]).classList.remove('hidden'); }
+  });
+  document.getElementById('asmOutput').classList.remove('hidden');
+}
+
+async function generateImageBrief() {
+  if (!uploadedB64.img) return;
+  const workName = document.getElementById('imgWorkName').value.trim()||'this work';
+  const task = document.getElementById('imgTask').value;
+  const notes = document.getElementById('imgNotes').value.trim();
+  document.getElementById('imgBtn').disabled = true;
+  document.getElementById('loadingImage').classList.remove('hidden');
+  document.getElementById('imagePlaceholder').classList.add('hidden');
+  document.getElementById('imageOutput').classList.add('hidden');
+  hideError('errorImage');
+  const prompts = {
+    canva_brief: `Look at this photo of "${workName}". Write a specific Canva editing brief for Felicia. Include: crop ratio and why, brightness/contrast adjustments with numbers, warmth adjustments, background fixes, text overlay suggestions. Numbered list.`,
+    caption: `Look at this photo of "${workName}". Write an Instagram caption in RENU voice. Max 5 hashtags. ${notes}`,
+    composition: `Look at this photo of "${workName}". Composition feedback for gallery/prize use: what works, what to improve, background quality, lighting, angle recommendations. ${notes}`,
+    all: `Look at this photo of "${workName}". Three sections:\n\nCANVA BRIEF: Editing instructions for Felicia — crop, brightness numbers, warmth, background.\n\nINSTAGRAM CAPTION: RENU voice, max 5 hashtags.\n\nCOMPOSITION NOTES: Honest feedback for gallery/prize use.\n\n${notes?'Context: '+notes:''}`
+  };
+  try {
+    const result = await callClaude(prompts[task], 'img');
+    if (result) renderImageOutput(result, task);
+  } catch(e) {
+    showError('errorImage', e.message);
+    document.getElementById('imagePlaceholder').classList.remove('hidden');
+  }
+  document.getElementById('imgBtn').disabled = false;
+  document.getElementById('loadingImage').classList.add('hidden');
+}
+
+function renderImageOutput(text, task) {
+  ['canvaOut','imgCapOut','compOut'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  if (task==='all') {
+    const cm=text.match(/CANVA BRIEF:([\s\S]*?)(?=INSTAGRAM CAPTION:|$)/i);
+    const capm=text.match(/INSTAGRAM CAPTION:([\s\S]*?)(?=COMPOSITION NOTES:|$)/i);
+    const compm=text.match(/COMPOSITION NOTES:([\s\S]*)/i);
+    if(cm){document.getElementById('canva-text').textContent=cm[1].trim();document.getElementById('canvaOut').classList.remove('hidden');}
+    if(capm){document.getElementById('imgcap-text').textContent=capm[1].trim();document.getElementById('imgCapOut').classList.remove('hidden');}
+    if(compm){document.getElementById('comp-text').textContent=compm[1].trim();document.getElementById('compOut').classList.remove('hidden');}
+  } else if(task==='canva_brief'){document.getElementById('canva-text').textContent=text;document.getElementById('canvaOut').classList.remove('hidden');}
+  else if(task==='caption'){document.getElementById('imgcap-text').textContent=text;document.getElementById('imgCapOut').classList.remove('hidden');}
+  else{document.getElementById('comp-text').textContent=text;document.getElementById('compOut').classList.remove('hidden');}
+  document.getElementById('imageOutput').classList.remove('hidden');
+}
+
+function renderDeadlines() {
+  const now = new Date();
+  const sorted = [...deadlines].sort((a,b) => new Date(a.date)-new Date(b.date));
+  document.getElementById('deadlineList').innerHTML = sorted.map((d,i) => {
+    const diff = Math.ceil((new Date(d.date)-now)/(1000*60*60*24));
+    let badge,cls;
+    if(diff<0){badge='Passed';cls='badge-past';}
+    else if(diff<=7){badge=diff+'d — urgent';cls='badge-urgent';}
+    else if(diff<=21){badge=diff+' days';cls='badge-soon';}
+    else{badge=diff+' days';cls='badge-ok';}
+    return `<div class="deadline-row"><div><div class="deadline-name">${d.name}</div><div class="deadline-meta">${d.type} · ${d.date}</div></div><div style="display:flex;align-items:center;gap:8px"><span class="badge ${cls}">${badge}</span><button onclick="removeDeadline(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px">&times;</button></div></div>`;
+  }).join('');
+}
+
+function addDeadline() {
+  const name=document.getElementById('newName').value.trim();
+  const date=document.getElementById('newDate').value;
+  const type=document.getElementById('newType').value;
+  if(!name||!date) return;
+  deadlines.push({name,date,type});
+  document.getElementById('newName').value='';
+  document.getElementById('newDate').value='';
+  renderDeadlines();
+}
+
+function removeDeadline(i) {
+  const sorted=[...deadlines].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const item=sorted[i];
+  const idx=deadlines.findIndex(d=>d.name===item.name&&d.date===item.date);
+  if(idx>-1) deadlines.splice(idx,1);
+  renderDeadlines();
+}
+
+function copyText(id) {
+  const text=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();});
+}
+
+renderDeadlines();
+</script>
+</body>
+</html>
